@@ -27,11 +27,13 @@ const handler = NextAuth({
                 }
 
                 const keypair = Keypair.generate();
-                const privateKey =  keypair.secretKey.toString();
+                const privateKey = keypair.secretKey.toString();
                 const publicKey = keypair.publicKey.toBase58();
                 await db.user.create({
                     data: {
                         username: email,
+                        name: user.name,
+                        profilePicture: user.image,
                         provider: "Google",
                         solWallet: {
                             create: {

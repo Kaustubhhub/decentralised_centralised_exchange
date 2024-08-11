@@ -1,26 +1,38 @@
-"use client"
+
 import { useSession } from "next-auth/react"
-export default function () {
-    const session = useSession()
-    return <div className="pt-8 flex justify-center">
-        <div className="max-w-4xl bg-white rounded shadow w-full p-12">
-            <Greeting image={session.data?.user?.image || ''} name={session.data?.user?.name?.split(' ')[0] || ''} />
-            <Assests />
-        </div>
-    </div>
+import { ProfileCard } from "../components/ProfileCard"
+import db from '@/app/db'
+import { getServerSession } from "next-auth"
+
+async function getUserwallet() {
+    const session = await getServerSession()
+
+    const userWallet = await db.solWallet.findFirst({
+        where: {
+            //@ts-ignore
+            userId: session?.user?.uid
+        },
+        select: {
+            publicKey: true
+        }
+    })
+    if (!userWallet) {
+        return {
+            error: "no solana wallet found associated to the user"
+        }
+    }
+
+    return { error: null, userWallet }
 }
 
-function Assests({ }) {
+export default async function () {
+    const userWallet = await getUserwallet()
+    if (userWallet.error || !userWallet.userWallet?.publicKey) {
+        return <div>
+            no solana wallet found!
+        </div>
+    }
     return <div>
-
-    </div>
-}
-
-function Greeting({ image, name }: { image: string, name: string }) {
-    return <div className="flex justify-start items-center">
-        <img className="rounded-full w-16 h-16 mr-4" src={image} alt="" />
-        <div className="text-2xl font-bold flex flex-col justify-center">
-            Welcome back, {name}!
-        </div>
+        <ProfileCard publicKey={userWallet.userWallet?.publicKey} />
     </div>
 }
